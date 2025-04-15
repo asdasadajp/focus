@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Focus Mode</title>
+</head>
+<body>
+  <h1>🧘 フォーカスモード</h1>
+  <button id="blockBtn">ブロック開始</button>
+  <button id="unblockBtn">ブロック解除</button>
+  <pre id="output"></pre>
+
+  <script>
+    document.getElementById("blockBtn").addEventListener("click", () => {
+      window.electronAPI.runPython("manual_focus.py block");
+    });
+
+    document.getElementById("unblockBtn").addEventListener("click", () => {
+      window.electronAPI.runPython("manual_focus.py unblock");
+    });
+
+    window.electronAPI.onPythonResult((data) => {
+      document.getElementById("output").textContent += data + "\n";
+    });
+  </script>
+</body>
+</html>
