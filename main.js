@@ -12,7 +12,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile("focus.html");
+  win.loadFile("index.html");
 }
 
 // Python 実行イベントを受け取る
