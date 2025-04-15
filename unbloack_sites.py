@@ -8,7 +8,10 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 HOSTS_PATH = r"C:\Windows\System32\drivers\etc\hosts"
 REDIRECT_IP = "127.0.0.1"
-BLACKLIST_FILE = "blacklist.txt"
+
+# スクリプトのあるディレクトリのパスを取得
+script_dir = os.path.dirname(os.path.abspath(__file__))
+BLACKLIST_FILE = os.path.join(script_dir, "blacklist.txt")
 
 def load_blacklist():
     if not os.path.exists(BLACKLIST_FILE):
