@@ -1,27 +1,305 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Focus Mode</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        textarea.input-field {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            resize: vertical;
+        }
+
+        textarea.input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fc466b, #3f5efb);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(252, 70, 107, 0.3);
+        }
+
+        .status-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #cbd5e0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #fc466b, #3f5efb);
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+
+            .input-field {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>🧘 フォーカスモード</h1>
-  <button id="blockBtn">ブロック開始</button>
-  <button id="unblockBtn">ブロック解除</button>
-  <pre id="output"></pre>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Focus Timer</h1>
+            <p>集中力を高めるために、気を散らすサイトをブロックしましょう</p>
+        </div>
 
-  <script>
-    document.getElementById("blockBtn").addEventListener("click", () => {
-      window.electronAPI.runPython("manual_focus.py block");
-    });
+        <div class="input-section">
+            <div class="status-toggle">
+                <span class="status-text">ブロッカー:</span>
+                <div class="toggle-switch" id="blockerToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+                <span class="status-text" id="statusText">無効</span>
+            </div>
 
-    document.getElementById("unblockBtn").addEventListener("click", () => {
-      window.electronAPI.runPython("manual_focus.py unblock");
-    });
+            <div class="input-group">
+                <textarea id="blacklist" class="input-field" placeholder="ここにサイトを入力（例: youtube.com）1行ずつ"></textarea>
+            </div>
+            <button id="save-btn" class="btn btn-primary">💾 保存</button>
+            <p id="save-result"></p>
+        </div>
 
-    window.electronAPI.onPythonResult((data) => {
-      document.getElementById("output").textContent += data + "\n";
-    });
-  </script>
+        <div class="input-section">
+            <div class="input-group">
+                <button class="btn btn-primary" onclick="runScript('manual_focus.py block')">🔒 ブロック</button>
+                <button class="btn btn-danger" onclick="runScript('unblock_sites.py')">🔓 アンブロック</button>
+            </div>
+        </div>
+
+        <pre id="output"></pre>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        let originalContent = "";
+        let isBlockerActive = false;
+
+        // blacklist 読み込み
+        window.api.onBlacklistData((data) => {
+            document.getElementById("blacklist").value = data;
+            originalContent = data;
+        });
+
+        // 保存ボタン押下時
+        document.getElementById("save-btn").addEventListener("click", () => {
+            const content = document.getElementById("blacklist").value;
+            if (content !== originalContent) {
+                window.api.saveBlacklist(content);
+                showNotification("💾 保存しました！", "success");
+                originalContent = content;
+            } else {
+                showNotification("✅ 変更はありません。", "success");
+            }
+        });
+
+        // 保存結果の表示
+        window.api.onSaveResult((msg) => {
+            console.log(msg);
+        });
+
+        // Python 実行
+        function runScript(script) {
+            window.api.runPython(script);
+        }
+
+        // 実行結果の表示
+        window.api.onPythonResult((msg) => {
+            document.getElementById("output").textContent = msg;
+            showNotification(msg, "success");
+        });
+
+        // トグルスイッチの設定
+        document.getElementById("blockerToggle").addEventListener("click", function() {
+            isBlockerActive = !isBlockerActive;
+            const toggle = this;
+            const statusText = document.getElementById("statusText");
+
+            if (isBlockerActive) {
+                toggle.classList.add("active");
+                statusText.textContent = "有効";
+                runScript("manual_focus.py block");
+            } else {
+                toggle.classList.remove("active");
+                statusText.textContent = "無効";
+                runScript("unblock_sites.py");
+            }
+        });
+
+        function showNotification(message, type) {
+            const notification = document.getElementById("notification");
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add("show");
+
+            setTimeout(() => {
+                notification.classList.remove("show");
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

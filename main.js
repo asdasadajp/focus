@@ -10,29 +10,51 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
-      nodeIntegration: false // 必要に応じて
+      nodeIntegration: false,
     },
   });
 
   win.loadFile("index.html");
 
-  // blacklist.txt のパス
-  const blacklistPath = path.join(process.resourcesPath, 'app/blacklist.txt');
+  // AppData 内の focus-timer ディレクトリ
+  const appDataPath = path.join(app.getPath("appData"), "focus-timer");
+  const blacklistPath = path.join(appDataPath, "blacklist.txt");
 
-  // blacklist.txt を読み込んでレンダラープロセスに送信
-  fs.readFile(blacklistPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading blacklist.txt:', err);
-      return;
-    }
-    // blacklist.txt の内容をレンダラープロセスに送信
-    win.webContents.send('blacklist-data', data);
+  // フォルダ・ファイルがなければ作成
+  if (!fs.existsSync(appDataPath)) {
+    fs.mkdirSync(appDataPath);
+  }
+  if (!fs.existsSync(blacklistPath)) {
+    fs.writeFileSync(blacklistPath, "", "utf-8"); // 空ファイル作成
+  }
+
+  // HTML の読み込み完了後に blacklist.txt を送信
+  win.webContents.on("did-finish-load", () => {
+    fs.readFile(blacklistPath, "utf8", (err, data) => {
+      if (err) {
+        console.error("Error reading blacklist.txt:", err);
+        return;
+      }
+      win.webContents.send("blacklist-data", data);
+    });
+  });
+
+  // 保存要求を受け取って blacklist.txt を更新
+  ipcMain.on("save-blacklist", (event, content) => {
+    fs.writeFile(blacklistPath, content, "utf8", (err) => {
+      if (err) {
+        console.error("Error saving blacklist.txt:", err);
+        event.sender.send("save-result", "❌ 保存に失敗しました");
+        return;
+      }
+      event.sender.send("save-result", "✅ 保存完了");
+    });
   });
 }
 
-// Python 実行イベントを受け取る
+// Python スクリプト実行
 ipcMain.on("run-python", (event, script) => {
-  const scriptParts = script.split(" "); // ["manual_focus.py", "block"]
+  const scriptParts = script.split(" ");
   const command = `python ${path.join(__dirname, scriptParts[0])} ${scriptParts.slice(1).join(" ")}`;
 
   exec(command, (error, stdout, stderr) => {

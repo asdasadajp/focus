@@ -3,7 +3,11 @@
     "version": "1.0.0",
     "main": "main.js",
     "scripts": {
-        "start": "electron ."
+        "start": "electron .",
+        "build": "electron-packager . focus-timer --platform=win32 --arch=x64 --overwrite --extra-resource=blacklist.txt --extra-resource=block_sites.py --extra-resource=unblock_sites.py"
+
+        
+
     },
     "devDependencies": {
         "electron": "^28.3.3"

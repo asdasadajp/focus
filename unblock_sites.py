@@ -12,14 +12,14 @@ REDIRECT_IP = "127.0.0.1"
 app_dir = os.path.join(os.getenv("APPDATA"), "focus-timer")
 os.makedirs(app_dir, exist_ok=True)
 
-# AppData\Roaming\focus-timer にある blacklist.txt を参照
-BLACKLIST_FILE = os.path.join(os.getenv("APPDATA"), "focus-timer", "blacklist.txt")
+# AppData にある blacklist.txt を参照
+BLACKLIST_FILE = os.path.join(app_dir, "blacklist.txt")
 
-# デフォルト（exeと同じ場所）の blacklist.txt
+# デフォルト（実行ファイルと同じ場所）の blacklist.txt
 script_dir = os.path.dirname(os.path.abspath(__file__))
 default_blacklist = os.path.join(script_dir, "blacklist.txt")
 
-# AppData に blacklist.txt がなければ、デフォルトからコピー、なければ空で作成
+# AppData に blacklist.txt がなければ、デフォルトからコピー or 空作成
 if not os.path.exists(BLACKLIST_FILE):
     if os.path.exists(default_blacklist):
         shutil.copyfile(default_blacklist, BLACKLIST_FILE)
@@ -36,7 +36,7 @@ def load_blacklist():
         print(f"❌ blacklist.txt を読み込めませんでした: {e}")
         return []
 
-def block_sites():
+def unblock_sites():
     websites = load_blacklist()
     if not websites:
         print("⚠️ ブラックリストが空です。")
@@ -44,17 +44,21 @@ def block_sites():
 
     try:
         with open(HOSTS_PATH, "r+", encoding="utf-8", errors="ignore") as file:
-            content = file.read()
-            for site in websites:
-                if f"{REDIRECT_IP} {site}" not in content:
-                    file.write(f"{REDIRECT_IP} {site}\n")
-                    print(f"🔒 {site} をブロックしました。")
-                else:
-                    print(f"✅ {site} はすでにブロックされています。")
+            lines = file.readlines()
+            file.seek(0)
+            file.truncate(0)  # 中身をクリア
+
+            for line in lines:
+                if not any(f"{REDIRECT_IP} {site}" in line for site in websites):
+                    file.write(line)
+
+        for site in websites:
+            print(f"🔓 {site} のブロックを解除しました。")
+
     except PermissionError:
         print("❌ 'hosts' ファイルにアクセスできません。管理者権限で実行してください。")
     except Exception as e:
         print(f"❌ エラーが発生しました: {e}")
 
 if __name__ == "__main__":
-    block_sites()
+    unblock_sites()
