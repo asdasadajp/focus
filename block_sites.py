@@ -36,25 +36,45 @@ def load_blacklist():
         print(f"❌ blacklist.txt を読み込めませんでした: {e}")
         return []
 
-def block_sites():
-    websites = load_blacklist()
+def block_sites(websites=None):
+    if websites is None:
+        websites = load_blacklist()
+    
     if not websites:
         print("⚠️ ブラックリストが空です。")
         return
 
     try:
-        with open(HOSTS_PATH, "r+", encoding="utf-8", errors="ignore") as file:
+        # 現在のhostsファイルの内容を読み込む
+        with open(HOSTS_PATH, "r", encoding="utf-8", errors="ignore") as file:
             content = file.read()
-            for site in websites:
-                if f"{REDIRECT_IP} {site}" not in content:
-                    file.write(f"{REDIRECT_IP} {site}\n")
-                    print(f"🔒 {site} をブロックしました。")
-                else:
-                    print(f"✅ {site} はすでにブロックされています。")
+        
+        # 新しいエントリを追加
+        new_entries = []
+        for site in websites:
+            if f"{REDIRECT_IP} {site}" not in content:
+                new_entries.append(f"{REDIRECT_IP} {site}\n")
+                print(f"🔒 {site} をブロックしました。")
+            else:
+                print(f"✅ {site} はすでにブロックされています。")
+        
+        # 新しいエントリがある場合のみ書き込み
+        if new_entries:
+            with open(HOSTS_PATH, "a", encoding="utf-8") as file:
+                file.writelines(new_entries)
+            print("✅ hostsファイルを更新しました。")
+        else:
+            print("ℹ️ 新しいブロックは必要ありませんでした。")
+            
     except PermissionError:
         print("❌ 'hosts' ファイルにアクセスできません。管理者権限で実行してください。")
     except Exception as e:
         print(f"❌ エラーが発生しました: {e}")
 
 if __name__ == "__main__":
-    block_sites()
+    # コマンドライン引数がある場合はそれを使用
+    if len(sys.argv) > 1:
+        websites = sys.argv[1:]
+        block_sites(websites)
+    else:
+        block_sites()
